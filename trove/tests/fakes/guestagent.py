@@ -221,6 +221,10 @@ class FakeGuest(object):
         time.sleep(1)
         self._set_status('RUNNING')
 
+    def reset_configuration(self, config):
+        # There's nothing to do here, since there is no config to update.
+        pass
+
     def start_db_with_conf_changes(self, updated_memory_size):
         time.sleep(2)
         self._set_status('RUNNING')
@@ -269,7 +273,7 @@ class FakeGuest(object):
 
     def create_backup(self, backup_id):
         from trove.backup.models import Backup, BackupState
-        backup = Backup.get_by_id(backup_id)
+        backup = Backup.get_by_id(context=None, backup_id=backup_id)
 
         def finish_create_backup():
             backup.state = BackupState.COMPLETED

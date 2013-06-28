@@ -19,6 +19,7 @@ from novaclient import exceptions as nova_exceptions
 from trove.common import cfg
 from trove.common import utils
 from trove.common.exception import GuestError
+from trove.common.exception import GuestTimeout
 from trove.common.exception import PollTimeOut
 from trove.common.exception import VolumeCreationFailure
 from trove.common.exception import TroveError
@@ -95,6 +96,11 @@ class NotifyMixin(object):
             payload.update({
                 'volume_size': self.volume_size,
                 'nova_volume_id': self.volume_id
+            })
+
+        if CONF.notification_service_id:
+            payload.update({
+                'service_id': CONF.notification_service_id
             })
 
         # Update payload with all other kwargs
@@ -544,7 +550,7 @@ class BackupTasks(object):
     @classmethod
     def delete_backup(cls, context, backup_id):
         #delete backup from swift
-        backup = trove.backup.models.Backup.get_by_id(backup_id)
+        backup = trove.backup.models.Backup.get_by_id(context, backup_id)
         try:
             filename = backup.filename
             if filename:
@@ -702,6 +708,18 @@ class ResizeAction(ResizeActionBase):
 
     def _initiate_nova_action(self):
         self.instance.server.resize(self.new_flavor_id)
+
+    def _revert_nova_action(self):
+        LOG.debug("Instance %s calling Compute revert resize..."
+                  % self.instance.id)
+        LOG.debug("Repairing config.")
+        try:
+            config = {'memory_mb': self.old_memory_size}
+            self.instance.guest.reset_configuration(config)
+        except GuestTimeout as gt:
+            LOG.exception("Error sending reset_configuration call.")
+        LOG.debug("Reverting resize.")
+        super(ResizeAction, self)._revert_nova_action()
 
     def _record_action_success(self):
         LOG.debug("Updating instance %s to flavor_id %s."
