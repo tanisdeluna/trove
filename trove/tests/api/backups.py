@@ -168,16 +168,6 @@ class BackupsBase(object):
         for db in instance_info.databases:
             assert_true(db_name in dbs)
 
-        # Test to make sure that user in other tenant is not able
-        # to GET this backup
-        reqs = Requirements(is_admin=False)
-        other_user = CONFIG.users.find_user(
-            reqs,
-            black_list=[instance_info.user.auth_user])
-        other_client = create_dbaas_client(other_user)
-        assert_raises(exceptions.NotFound, other_client.backups.get,
-                      self.backup_info.id)
-
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
       groups=[GROUP, GROUP_POSITIVE])
@@ -527,7 +517,7 @@ class TestBackupNegative(BackupsBase):
         poll_until(lambda: self._verify_backup_status(backup.id, 'COMPLETED'),
                    time_out=120, sleep_time=2)
         self._delete_backup(backup.id)
-        poll_until(self._backup_is_gone)
+        poll_until(self._backup_is_gone(backup.id))
         try:
             self._create_restore(instance_info.dbaas, backup.id)
             assert_true(False, "Expected 404 from create restore")
