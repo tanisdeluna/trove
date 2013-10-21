@@ -50,7 +50,73 @@ sql_variables = [
     'connect_timeout',
     'join_buffer_size',
 ]
-
+parameters_booleans = [
+    'innodb_file_per_table',
+    'autocommit',
+    'local_infile'
+]
+parameters_integers = [
+    'key_buffer_size',
+    'join_buffer_size',
+    'sort_buffer_size',
+    'innodb_buffer_pool_size',
+    'innodb_flush_log_at_trx_commit',
+    'innodb_log_buffer_size',
+    'innodb_log_file_size',
+    'innodb_open_files',
+    'innodb_thread_concurrency',
+    'sync_binlog',
+    'auto_increment_increment',
+    'auto_increment_offset',
+    'bulk_insert_buffer_size',
+    'expire_logs_days',
+    'ft_min_word_len',
+    'connect_timeout',
+    'interactive_timeout',
+    'max_allowed_packet',
+    'max_connect_errors',
+    'max_connections',
+    'max_heap_table_size',
+    'tmp_table_size',
+    'myisam_sort_buffer_size',
+    'thread_cache_size',
+    'query_cache_size',
+    'table_open_cache',
+    'table_definition_cache',
+    'open_files_limit',
+    'max_user_connections',
+    'server_id',
+    'wait_timeout'
+]
+parameters_strings =[
+    'character_set_client',
+    'character_set_connection',
+    'character_set_database',
+    'character_set_filesystem',
+    'character_set_results',
+    'character_set_server',
+    'collation_connection',
+    'collation_database',
+    'collation_server',
+    'ft_stopword_file',
+    'default_time_zone'
+]
+parameters_all = parameters_booleans + parameters_integers + parameters_strings
+parameters_non_dynamic_booleans = ['local_infile', 'innodb_file_per_table']
+parameters_non_dynamic_integers = [
+    'innodb_buffer_pool_size',
+    'innodb_log_buffer_size',
+    'innodb_log_file_size',
+    'innodb_open_files',
+    'ft_min_word_len',
+    'open_files_limit',
+    'server_id'
+]
+parameters_non_dynamic_strings = ['ft_stopword_file']
+parameters_non_dynamic_all = parameters_non_dynamic_booleans + \
+    parameters_non_dynamic_integers + parameters_non_dynamic_strings
+parameters_dynamic_all =
+    [x for x in parameters_all if x not in parameters_non_dynamic_all]
 
 # helper methods to validate configuration is applied to instance
 def _execute_query(host, user_name, password, query):
