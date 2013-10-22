@@ -194,7 +194,8 @@ class CreateConfigurations(object):
         config_params_keys = []
         for param in config_params_list:
             config_params_keys.append(param['name'])
-        expected_config_params = ['key_buffer_size', 'connect_timeout']
+        #expected_config_params = ['key_buffer_size', 'connect_timeout']
+        expected_config_params = parameters_all
         for expected_config_item in expected_config_params:
             assert_true(expected_config_item in config_params_keys)
 
@@ -213,6 +214,27 @@ class CreateConfigurations(object):
         attrcheck.attrs_exist(config_parameter_dict, expected_config_params,
                               msg="Get Configuration parameter")
         assert_equal(param, config_parameter_dict['name'])
+
+    @test
+    def test_configurations_create_name_too_long(self):
+        """test create configuration with invalild value type"""
+        values = '{"connect_timeout": 120, "key_buffer_size": 52428800}'
+        assert_unprocessable(instance_info.dbaas.configurations.create,
+            "A" * 1024, values, CONFIG_DESC)
+
+    @test
+    def test_configurations_create_description_too_long(self):
+        """test create configuration with invalild value type"""
+        values = '{"connect_timeout": 120, "key_buffer_size": 52428800}'
+        assert_unprocessable(instance_info.dbaas.configurations.create,
+            CONFIG_NAME, values, "A" * 1024)
+
+    @test
+    def test_configurations_create_key_value_pairs_too_long(self):
+        """test create configuration with invalild value type"""
+        values = '{"connect_timeout": 120, "key_buffer_size": 52428800}' * 1024
+        assert_unprocessable(instance_info.dbaas.configurations.create,
+            CONFIG_NAME, values, CONFIG_DESC)
 
     @test
     def test_configurations_create_invalid_values(self):
@@ -237,6 +259,21 @@ class CreateConfigurations(object):
         values = '{"connect_timeout": -10}'
         assert_unprocessable(instance_info.dbaas.configurations.create,
                              CONFIG_NAME, values, CONFIG_DESC)
+
+    @test
+    def test_configurations_create_value_out_of_bounds_many(self):
+        """test create configuration with value out of bounds"""
+        #this becomes a list of dictionaries, where each dictionary is:
+        #   name:, min:, max:
+        #the string dictionaries ask: null permissiable?
+        #booleans do not have out of bounds, but should be tested as invalid 
+        #types.
+        values = '{"connect_timeout": 1000000}'
+        assert_unprocessable(instance_info.dbaas.configurations.create,
+            CONFIG_NAME, values, CONFIG_DESC)
+        values = '{"connect_timeout": -10}'
+        assert_unprocessable(instance_info.dbaas.configurations.create,
+            CONFIG_NAME, values, CONFIG_DESC)
 
     @test
     def test_valid_configurations_create(self):
