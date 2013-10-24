@@ -256,6 +256,49 @@ class CreateConfigurations(object):
                 expected_config_params,
                 msg="Get Configuration parameter")
             assert_equal(param, config_parameter_dict['name'])
+            assert_equal('integer', config_parameter_dict['type'])
+
+    #qe
+    @test
+    def test_expected_get_configuration_parameter_strings(self):
+        # tests GET configurations/parameters on many parameters to verify it
+        # has expected attributes
+        for param in parameters_strings:
+            #param = 'key_buffer_size'
+            expected_config_params = ['name', 'dynamic', 'type']
+            instance_info.dbaas.configurations_parameters.get_parameter(param)
+            resp, body = instance_info.dbaas.client.last_response
+            print(resp)
+            print(body)
+            config_parameter_dict = json.loads(body)
+            print(config_parameter_dict)
+            attrcheck = AttrCheck()
+            attrcheck.attrs_exist(config_parameter_dict,
+                expected_config_params,
+                msg="Get Configuration parameter")
+            assert_equal(param, config_parameter_dict['name'])
+            assert_equal('string', config_parameter_dict['type'])
+
+    # #qe
+    # @test
+    # def test_expected_get_configuration_parameter_booleans(self):
+    #     # tests GET configurations/parameters on many parameters to verify it
+    #     # has expected attributes
+    #     for param in parameters_booleans:
+    #         #param = 'key_buffer_size'
+    #         expected_config_params = ['name', 'dynamic', 'type']
+    #         instance_info.dbaas.configurations_parameters.get_parameter(param)
+    #         resp, body = instance_info.dbaas.client.last_response
+    #         print(resp)
+    #         print(body)
+    #         config_parameter_dict = json.loads(body)
+    #         print(config_parameter_dict)
+    #         attrcheck = AttrCheck()
+    #         attrcheck.attrs_exist(config_parameter_dict,
+    #             expected_config_params,
+    #             msg="Get Configuration parameter")
+    #         assert_equal(param, config_parameter_dict['name'])
+    #         assert_equal('boolean', config_parameter_dict['type'])
 
     @test
     def test_configurations_create_name_too_long(self):
