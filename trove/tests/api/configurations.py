@@ -300,23 +300,26 @@ class CreateConfigurations(object):
     #         assert_equal(param, config_parameter_dict['name'])
     #         assert_equal('boolean', config_parameter_dict['type'])
 
+    #qe
     @test
     def test_configurations_create_name_too_long(self):
-        """test create configuration with invalild value type"""
+        """test create configuration with name too long"""
         values = '{"connect_timeout": 120, "key_buffer_size": 52428800}'
         assert_unprocessable(instance_info.dbaas.configurations.create,
             "A" * 1024, values, CONFIG_DESC)
 
+    #qe
     @test
     def test_configurations_create_description_too_long(self):
-        """test create configuration with invalild value type"""
+        """test create configuration with description too long"""
         values = '{"connect_timeout": 120, "key_buffer_size": 52428800}'
         assert_unprocessable(instance_info.dbaas.configurations.create,
             CONFIG_NAME, values, "A" * 1024)
 
+    #qe
     @test
     def test_configurations_create_key_value_pairs_too_long(self):
-        """test create configuration with invalild value type"""
+        """test create configuration with key-value pairs too long"""
         values = '{"connect_timeout": 120, "key_buffer_size": 52428800}' * 1024
         assert_unprocessable(instance_info.dbaas.configurations.create,
             CONFIG_NAME, values, CONFIG_DESC)
@@ -345,6 +348,8 @@ class CreateConfigurations(object):
         assert_unprocessable(instance_info.dbaas.configurations.create,
                              CONFIG_NAME, values, CONFIG_DESC)
 
+    #qe
+    # ??????????????
     @test
     def test_configurations_create_value_out_of_bounds_many(self):
         """test create configuration with value out of bounds"""
@@ -621,14 +626,11 @@ class WaitForConfigurationInstanceToFinish(object):
                                                    configuration_id)
 
 
-
-
-
-
-
+#qe
 @test(runs_after=[WaitForConfigurationInstanceToFinish], groups=[GROUP])
 class MoreConfigurations(object):
 
+    #qe
     @test
     def test_changing_configuration_with_dynamic_parameter(self):
         # update a configuration group with only dynamic variables
@@ -659,23 +661,27 @@ class MoreConfigurations(object):
         print(instance.status)
         assert_equal('ACTIVE', instance.status)
 
-    @test(depends_on=[test_changing_configuration_with_nondynamic_parameter])
-    def test_restart_service_should_return_active(self):
-        # test that after restarting the instance it becomes active
-        instance_info.dbaas.instances.restart(instance_info.id)
-        resp, body = instance_info.dbaas.client.last_response
-        assert_equal(resp.status, 202)
+    #qe
+    #probably don't need this here at all.
+    #there is no need to restart the instance after applying dynamic only
+    # @test(depends_on=[test_changing_configuration_with_nondynamic_parameter])
+    # def test_restart_service_should_return_active(self):
+    #     # test that after restarting the instance it becomes active
+    #     instance_info.dbaas.instances.restart(instance_info.id)
+    #     resp, body = instance_info.dbaas.client.last_response
+    #     assert_equal(resp.status, 202)
 
-        def result_is_active():
-            instance = instance_info.dbaas.instances.get(
-                instance_info.id)
-            if instance.status == "ACTIVE":
-                return True
-            else:
-                assert_equal("REBOOT", instance.status)
-                return False
-        poll_until(result_is_active)
+    #     def result_is_active():
+    #         instance = instance_info.dbaas.instances.get(
+    #             instance_info.id)
+    #         if instance.status == "ACTIVE":
+    #             return True
+    #         else:
+    #             assert_equal("REBOOT", instance.status)
+    #             return False
+    #     poll_until(result_is_active)
 
+    #qe
     @test
     def test_changing_configuration_with_dynamic_and_nondynamic(self):
         # test that changing a non-dynamic parameter is applied to instance
@@ -710,9 +716,11 @@ class MoreConfigurations(object):
         assert_equal('RESTART_REQUIRED', instance.status)
 
     @test(depends_on=[test_changing_configuration_with_nondynamic_parameter])
-    def test_restart_service_should_return_active_again(self):
+    def test_resize_service_should_return_active_again(self):
         # test that after restarting the instance it becomes active
-        instance_info.dbaas.instances.restart(instance_info.id)
+        # This test is also 
+        #HEY, TODO, TO DO, etc: is this the correct call to flavor?
+        instance_info.dbaas.instances.resize_instance(instance_info.id, 3)
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 202)
 
@@ -722,11 +730,11 @@ class MoreConfigurations(object):
             if instance.status == "ACTIVE":
                 return True
             else:
-                assert_equal("REBOOT", instance.status)
+                assert_equal("RESIZE", instance.status)
                 return False
         poll_until(result_is_active)
 
-    @test(depends_on=[test_restart_service_should_return_active])
+    @test(depends_on=[test_resize_service_should_return_active])
     @time_out(10)
     def test_get_configuration_details_from_instance_validation_again(self):
         # validate that the configuraiton was applied correctly to the instance
@@ -736,10 +744,6 @@ class MoreConfigurations(object):
         configuration_id = inst.configuration['id']
         _test_configuration_is_applied_to_instance(instance_info,
                                                    configuration_id)
-
-
-
-
 
 
 @test(depends_on_classes=[MoreConfigurations], groups=[GROUP])
