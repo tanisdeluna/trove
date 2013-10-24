@@ -216,12 +216,10 @@ class CreateConfigurations(object):
         for param in config_params_list:
             config_params_keys.append(param['name'])
         #expected_config_params = ['key_buffer_size', 'connect_timeout']
-        #the only real change here
+        #the only real change here is replacing the previous with the following
         expected_config_params = parameters_all
         for expected_config_item in expected_config_params:
             assert_true(expected_config_item in config_params_keys)
-
-
 
     @test
     def test_expected_get_configuration_parameter(self):
@@ -241,21 +239,23 @@ class CreateConfigurations(object):
 
     #qe
     @test
-    def test_expected_get_configuration_parameter_more(self):
+    def test_expected_get_configuration_parameter_integers(self):
         # tests GET configurations/parameters on many parameters to verify it
         # has expected attributes
-        param = 'key_buffer_size'
-        expected_config_params = ['name', 'dynamic', 'max', 'min', 'type']
-        instance_info.dbaas.configurations_parameters.get_parameter(param)
-        resp, body = instance_info.dbaas.client.last_response
-        print(resp)
-        print(body)
-        attrcheck = AttrCheck()
-        config_parameter_dict = json.loads(body)
-        print(config_parameter_dict)
-        attrcheck.attrs_exist(config_parameter_dict, expected_config_params,
-                              msg="Get Configuration parameter")
-        assert_equal(param, config_parameter_dict['name'])
+        for param in parameters_integers:
+            #param = 'key_buffer_size'
+            expected_config_params = ['name', 'dynamic', 'max', 'min', 'type']
+            instance_info.dbaas.configurations_parameters.get_parameter(param)
+            resp, body = instance_info.dbaas.client.last_response
+            print(resp)
+            print(body)
+            config_parameter_dict = json.loads(body)
+            print(config_parameter_dict)
+            attrcheck = AttrCheck()
+            attrcheck.attrs_exist(config_parameter_dict,
+                expected_config_params,
+                msg="Get Configuration parameter")
+            assert_equal(param, config_parameter_dict['name'])
 
     @test
     def test_configurations_create_name_too_long(self):
