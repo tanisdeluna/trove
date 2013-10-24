@@ -115,8 +115,9 @@ parameters_non_dynamic_integers = [
 parameters_non_dynamic_strings = ['ft_stopword_file']
 parameters_non_dynamic_all = parameters_non_dynamic_booleans + \
     parameters_non_dynamic_integers + parameters_non_dynamic_strings
-parameters_dynamic_all =
-    [x for x in parameters_all if x not in parameters_non_dynamic_all]
+parameters_dynamic_all = [x for x in parameters_all if x not in parameters_non_dynamic_all]
+parameters_file = json.loads('{ "configuration-parameters": [ { "name": "innodb_file_per_table", "dynamic": false, "max": 1, "min": 0, "type": "boolean" }, { "name": "autocommit", "dynamic": true, "max": 1, "min": 0, "type": "boolean" }, { "name": "local_infile", "dynamic": true, "max": 1, "min": 0, "type": "boolean" }, { "name": "key_buffer_size", "dynamic": true, "max": 4294967296, "min": 0, "type": "integer" }, { "name": "connect_timeout", "dynamic": true, "max": 65535, "min": 1, "type": "integer" }, { "name": "join_buffer_size", "dynamic": true, "max": 4294967296, "min": 0, "type": "integer" }, { "name": "sort_buffer_size", "dynamic": true, "max": 18446744073709547520, "min": 32768, "type": "integer" }, { "name": "innodb_buffer_pool_size", "dynamic": false, "max": 68719476736, "min": 0, "type": "integer" }, { "name": "innodb_flush_log_at_trx_commit", "dynamic": true, "max": 2, "min": 0, "type": "integer" }, { "name": "innodb_log_buffer_size", "dynamic": false, "max": 4294967296, "min": 1048576, "type": "integer" }, { "name": "innodb_open_files", "dynamic": false, "max": 4294967296, "min": 10, "type": "integer" }, { "name": "innodb_thread_concurrency", "dynamic": true, "max": 1000, "min": 0, "type": "integer" }, { "name": "sync_binlog", "dynamic": true, "max": 18446744073709547520, "min": 0, "type": "integer" }, { "name": "auto_increment_increment", "dynamic": true, "max": 65535, "min": 1, "type": "integer" }, { "name": "auto_increment_offset", "dynamic": true, "max": 65535, "min": 1, "type": "integer" }, { "name": "bulk_insert_buffer_size", "dynamic": true, "max": 18446744073709547520, "min": 0, "type": "integer" }, { "name": "expire_logs_days", "dynamic": true, "max": 65535, "min": 1, "type": "integer" }, { "name": "connect_timeout", "dynamic": true, "max": 65535, "min": 1, "type": "integer" }, { "name": "interactive_timeout", "dynamic": true, "max": 65535, "min": 1, "type": "integer" }, { "name": "max_allowed_packet", "dynamic": true, "max": 1073741824, "min": 1024, "type": "integer" }, { "name": "max_connect_errors", "dynamic": true, "max": 18446744073709547520, "min": 1, "type": "integer" }, { "name": "max_connections", "dynamic": true, "max": 65535, "min": 1, "type": "integer" }, { "name": "myisam_sort_buffer_size", "dynamic": true, "max": 18446744073709547520, "min": 4, "type": "integer" }, { "name": "max_user_connections", "dynamic": true, "max": 100000, "min": 1, "type": "integer" }, { "name": "server_id", "dynamic": false, "max": 100000, "min": 1, "type": "integer" }, { "name": "wait_timeout", "dynamic": true, "max": 31536000, "min": 1, "type": "integer" }, { "name": "character_set_client", "dynamic": true, "type": "string" }, { "name": "character_set_connection", "dynamic": true, "type": "string" }, { "name": "character_set_database", "dynamic": true, "type": "string" }, { "name": "character_set_filesystem", "dynamic": true, "type": "string" }, { "name": "character_set_results", "dynamic": true, "type": "string" }, { "name": "character_set_server", "dynamic": true, "type": "string" }, { "name": "collation_connection", "dynamic": true, "type": "string" }, { "name": "collation_database", "dynamic": true, "type": "string" }, { "name": "collation_server", "dynamic": true, "type": "string" } ] }')["configuration-parameters"]
+#parameters_file["configuration-parameters"]
 
 # helper methods to validate configuration is applied to instance
 def _execute_query(host, user_name, password, query):
@@ -194,14 +195,55 @@ class CreateConfigurations(object):
         config_params_keys = []
         for param in config_params_list:
             config_params_keys.append(param['name'])
+        expected_config_params = ['key_buffer_size', 'connect_timeout']
+        for expected_config_item in expected_config_params:
+            assert_true(expected_config_item in config_params_keys)
+
+    #qe: modified by adding parameters_all
+    @test
+    def test_expected_configurations_parameters_all(self):
+        """test get expected configurations parameters, all"""
+        expected_attrs = ["configuration-parameters"]
+        instance_info.dbaas.configurations_parameters.parameters()
+        resp, body = instance_info.dbaas.client.last_response
+        attrcheck = AttrCheck()
+        config_parameters_dict = json.loads(body)
+        attrcheck.attrs_exist(config_parameters_dict, expected_attrs,
+                              msg="Configurations parameters")
+        #go beyond the sanity check. check all parameters, hardcoded above
+        config_params_list = config_parameters_dict['configuration-parameters']
+        config_params_keys = []
+        for param in config_params_list:
+            config_params_keys.append(param['name'])
         #expected_config_params = ['key_buffer_size', 'connect_timeout']
+        #the only real change here
         expected_config_params = parameters_all
         for expected_config_item in expected_config_params:
             assert_true(expected_config_item in config_params_keys)
 
+
+
     @test
     def test_expected_get_configuration_parameter(self):
         # tests get on a single parameter to verify it has expected attributes
+        param = 'key_buffer_size'
+        expected_config_params = ['name', 'dynamic', 'max', 'min', 'type']
+        instance_info.dbaas.configurations_parameters.get_parameter(param)
+        resp, body = instance_info.dbaas.client.last_response
+        print(resp)
+        print(body)
+        attrcheck = AttrCheck()
+        config_parameter_dict = json.loads(body)
+        print(config_parameter_dict)
+        attrcheck.attrs_exist(config_parameter_dict, expected_config_params,
+                              msg="Get Configuration parameter")
+        assert_equal(param, config_parameter_dict['name'])
+
+    #qe
+    @test
+    def test_expected_get_configuration_parameter_more(self):
+        # tests GET configurations/parameters on many parameters to verify it
+        # has expected attributes
         param = 'key_buffer_size'
         expected_config_params = ['name', 'dynamic', 'max', 'min', 'type']
         instance_info.dbaas.configurations_parameters.get_parameter(param)
@@ -534,6 +576,172 @@ class WaitForConfigurationInstanceToFinish(object):
         configuration_id = inst.configuration['id']
         _test_configuration_is_applied_to_instance(configuration_instance,
                                                    configuration_id)
+
+
+
+
+
+
+
+@test(runs_after=[WaitForConfigurationInstanceToFinish], groups=[GROUP])
+class MoreConfigurations(object):
+
+    @test
+    def test_changing_configuration_with_dynamic_parameter(self):
+        # update a configuration group with only dynamic variables
+        # apply the configuration group to the instance
+        # no restart should be required
+        values = ('{"max_connections": 4444}')
+        instance_info.dbaas.configurations.update(configuration_info.id,
+                                                  values)
+        resp, body = instance_info.dbaas.client.last_response
+        assert_equal(resp.status, 202)
+
+        instance_info.dbaas.configurations.get(configuration_info.id)
+        resp, body = instance_info.dbaas.client.last_response
+        assert_equal(resp.status, 200)
+
+        def result_is_active():
+            instance = instance_info.dbaas.instances.get(
+                instance_info.id)
+            if instance.status == "ACTIVE":
+                return True
+            else:
+                return False
+        poll_until(result_is_active)
+
+        instance = instance_info.dbaas.instances.get(instance_info.id)
+        resp, body = instance_info.dbaas.client.last_response
+        assert_equal(resp.status, 200)
+        print(instance.status)
+        assert_equal('ACTIVE', instance.status)
+
+    @test(depends_on=[test_changing_configuration_with_nondynamic_parameter])
+    def test_restart_service_should_return_active(self):
+        # test that after restarting the instance it becomes active
+        instance_info.dbaas.instances.restart(instance_info.id)
+        resp, body = instance_info.dbaas.client.last_response
+        assert_equal(resp.status, 202)
+
+        def result_is_active():
+            instance = instance_info.dbaas.instances.get(
+                instance_info.id)
+            if instance.status == "ACTIVE":
+                return True
+            else:
+                assert_equal("REBOOT", instance.status)
+                return False
+        poll_until(result_is_active)
+
+    @test
+    def test_changing_configuration_with_dynamic_and_nondynamic(self):
+        # test that changing a non-dynamic parameter is applied to instance
+        # and show that the instance requires a restart
+        # A dynamic variable is included in the list of configurations
+        values = ('{"join_buffer_size": 1048576, '
+                  '"innodb_buffer_pool_size": 57671680, '
+                  '"max_connections": 4444}') #max_connections is dynamic
+
+        instance_info.dbaas.configurations.update(configuration_info.id,
+                                                  values)
+        resp, body = instance_info.dbaas.client.last_response
+        assert_equal(resp.status, 202)
+
+        instance_info.dbaas.configurations.get(configuration_info.id)
+        resp, body = instance_info.dbaas.client.last_response
+        assert_equal(resp.status, 200)
+
+        def result_is_not_active():
+            instance = instance_info.dbaas.instances.get(
+                instance_info.id)
+            if instance.status == "ACTIVE":
+                return False
+            else:
+                return True
+        poll_until(result_is_not_active)
+
+        instance = instance_info.dbaas.instances.get(instance_info.id)
+        resp, body = instance_info.dbaas.client.last_response
+        assert_equal(resp.status, 200)
+        print(instance.status)
+        assert_equal('RESTART_REQUIRED', instance.status)
+
+    @test(depends_on=[test_changing_configuration_with_nondynamic_parameter])
+    def test_restart_service_should_return_active_again(self):
+        # test that after restarting the instance it becomes active
+        instance_info.dbaas.instances.restart(instance_info.id)
+        resp, body = instance_info.dbaas.client.last_response
+        assert_equal(resp.status, 202)
+
+        def result_is_active():
+            instance = instance_info.dbaas.instances.get(
+                instance_info.id)
+            if instance.status == "ACTIVE":
+                return True
+            else:
+                assert_equal("REBOOT", instance.status)
+                return False
+        poll_until(result_is_active)
+
+    @test(depends_on=[test_restart_service_should_return_active])
+    @time_out(10)
+    def test_get_configuration_details_from_instance_validation_again(self):
+        # validate that the configuraiton was applied correctly to the instance
+        if CONFIG.fake_mode:
+            raise SkipTest("configuration from sql does not work in fake mode")
+        inst = instance_info.dbaas.instances.get(instance_info.id)
+        configuration_id = inst.configuration['id']
+        _test_configuration_is_applied_to_instance(instance_info,
+                                                   configuration_id)
+
+
+
+
+
+
+@test(depends_on_classes=[MoreConfigurations], groups=[GROUP])
+class WaitForConfigurationInstanceToFinishAgain(object):
+
+    @test
+    @time_out(60 * 7)
+    def test_instance_with_configuration_active(self):
+        # wait for the instance to become active
+        if test_config.auth_strategy == "fake":
+            raise SkipTest("Skipping instance start with configuration "
+                           "test for fake mode.")
+
+        def result_is_active():
+            instance = instance_info.dbaas.instances.get(
+                configuration_instance.id)
+            if instance.status == "ACTIVE":
+                return True
+            else:
+                assert_equal("BUILD", instance.status)
+                return False
+
+        poll_until(result_is_active)
+
+    @test(depends_on=[test_instance_with_configuration_active])
+    @time_out(10)
+    def test_get_configuration_details_from_instance_validation(self):
+        # validate that the configuraiton was applied correctly to the instance
+        if CONFIG.fake_mode:
+            raise SkipTest("configuration from sql does not work in fake mode")
+        inst = instance_info.dbaas.instances.get(configuration_instance.id)
+        configuration_id = inst.configuration['id']
+        _test_configuration_is_applied_to_instance(configuration_instance,
+                                                   configuration_id)
+
+
+
+
+
+
+
+
+
+
+
 
 
 @test(runs_after=[WaitForConfigurationInstanceToFinish], groups=[GROUP])
