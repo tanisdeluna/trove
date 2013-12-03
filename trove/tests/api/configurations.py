@@ -715,7 +715,7 @@ class MoreConfigurations(object):
         print(instance.status)
         assert_equal('RESTART_REQUIRED', instance.status)
 
-    @test(depends_on=[test_changing_configuration_with_nondynamic_parameter])
+    @test(depends_on=[test_changing_configuration_with_dynamic_and_nondynamic])
     def test_resize_service_should_return_active_again(self):
         # test that after restarting the instance it becomes active
         # This test is also 
@@ -734,7 +734,7 @@ class MoreConfigurations(object):
                 return False
         poll_until(result_is_active)
 
-    @test(depends_on=[test_resize_service_should_return_active])
+    @test(depends_on=[test_resize_service_should_return_active_again])
     @time_out(10)
     def test_get_configuration_details_from_instance_validation_again(self):
         # validate that the configuraiton was applied correctly to the instance
